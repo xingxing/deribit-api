@@ -54,7 +54,7 @@ func New(cfg *deribit.Configuration) *Client {
 	}
 	client := &Client{
 		ctx:              ctx,
-		addr:             cfg.Addr,
+		addr:             cfg.WsAddr,
 		apiKey:           cfg.ApiKey,
 		secretKey:        cfg.SecretKey,
 		autoReconnect:    cfg.AutoReconnect,
@@ -106,14 +106,20 @@ func (c *Client) subscribe(channels []string) {
 	}
 
 	if len(publicChannels) > 0 {
-		c.PublicSubscribe(&models.SubscribeParams{
+		_, err := c.PublicSubscribe(&models.SubscribeParams{
 			Channels: publicChannels,
 		})
+		if err != nil {
+			return
+		}
 	}
 	if len(privateChannels) > 0 {
-		c.PrivateSubscribe(&models.SubscribeParams{
+		_, err := c.PrivateSubscribe(&models.SubscribeParams{
 			Channels: privateChannels,
 		})
+		if err != nil {
+			return
+		}
 	}
 
 	allChannels := append(publicChannels, privateChannels...)
@@ -159,7 +165,10 @@ func (c *Client) start() error {
 	// subscribe
 	c.subscribe(c.subscriptions)
 
-	c.SetHeartbeat(&models.SetHeartbeatParams{Interval: 30})
+	_, err := c.SetHeartbeat(&models.SetHeartbeatParams{Interval: 30})
+	if err != nil {
+		return err
+	}
 
 	if c.autoReconnect {
 		go c.reconnect()
@@ -215,7 +224,10 @@ func (c *Client) heartbeat() {
 	for {
 		select {
 		case <-t.C:
-			c.Test()
+			_, err := c.Test()
+			if err != nil {
+				return
+			}
 		case <-c.heartCancel:
 			return
 		}
@@ -233,7 +245,10 @@ func (c *Client) reconnect() {
 
 	time.Sleep(1 * time.Second)
 
-	c.start()
+	err := c.start()
+	if err != nil {
+		return
+	}
 }
 
 func (c *Client) connect() (*websocket.Conn, *http.Response, error) {
