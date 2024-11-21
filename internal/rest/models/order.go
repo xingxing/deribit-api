@@ -129,7 +129,7 @@ func createSampleOrder() Order {
 		IsLiquidation:  false,
 		InstrumentName: "BTC-PERPETUAL",
 		FilledAmount:   0,
-		Direction:      DirectionBuy,
+		Direction:      "buy",
 		Timestamp:      time.Now().UnixMilli(),
 		AveragePrice:   0,
 		API:            true,
@@ -156,7 +156,7 @@ func createSampleTrade() Trade {
 		IndexPrice:     49990,
 		FeeCurrency:    "",
 		Fee:            0,
-		Direction:      DirectionBuy,
+		Direction:      "buy",
 		Amount:         1,
 	}
 }
