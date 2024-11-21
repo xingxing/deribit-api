@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"io"
+
+	"github.com/shopspring/decimal"
 
 	"net/http"
 	"net/url"

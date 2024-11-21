@@ -3,9 +3,10 @@ package websocket
 import (
 	websockecmodels "deribit-api/internal/websocket/models"
 	"deribit-api/pkg/models"
-	"github.com/json-iterator/go"
 	"log"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 func (c *Client) subscriptionsProcess(event *websockecmodels.Event) {
