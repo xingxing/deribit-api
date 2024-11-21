@@ -1,1 +1,1 @@
-package rest_example
+package main
