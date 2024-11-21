@@ -6,7 +6,7 @@ help: ## Display available commands
 
 install-tools: ## Install development tools
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install gotest.tools/gotestsum@latest
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 
@@ -15,6 +15,11 @@ test: ## Run tests
 
 lint: ## Run linter
 	golangci-lint run ./...
+
+lint-simple: ## Run linter
+	go vet ./...
+	gofmt -l -w .
+	goimports -l -w .
 
 vulncheck: ## Check for vulnerabilities
 	govulncheck ./...
