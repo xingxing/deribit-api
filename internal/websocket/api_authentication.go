@@ -1,6 +1,8 @@
-package deribit
+package websocket
 
-import "github.com/frankrap/deribit-api/models"
+import (
+	"deribit-api/pkg/models"
+)
 
 func (c *Client) Auth(apiKey string, secretKey string) (err error) {
 	params := models.ClientCredentialsParams{

@@ -1,6 +1,8 @@
-package deribit
+package websocket
 
-import "github.com/frankrap/deribit-api/models"
+import (
+	"deribit-api/pkg/models"
+)
 
 func (c *Client) GetBookSummaryByCurrency(params *models.GetBookSummaryByCurrencyParams) (result []models.BookSummary, err error) {
 	err = c.Call("public/get_book_summary_by_currency", params, &result)
