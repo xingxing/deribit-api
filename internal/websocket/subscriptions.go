@@ -1,13 +1,14 @@
-package deribit
+package websocket
 
 import (
-	"github.com/frankrap/deribit-api/models"
+	websockecmodels "deribit-api/internal/websocket/models"
+	"deribit-api/pkg/models"
 	"github.com/json-iterator/go"
 	"log"
 	"strings"
 )
 
-func (c *Client) subscriptionsProcess(event *Event) {
+func (c *Client) subscriptionsProcess(event *websockecmodels.Event) {
 	if c.debugMode {
 		log.Printf("Channel: %v %v", event.Channel, string(event.Data))
 	}
