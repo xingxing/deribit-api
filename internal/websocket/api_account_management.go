@@ -1,6 +1,8 @@
-package deribit
+package websocket
 
-import "github.com/frankrap/deribit-api/models"
+import (
+	"deribit-api/pkg/models"
+)
 
 func (c *Client) GetAnnouncements() (result []models.Announcement, err error) {
 	err = c.Call("public/get_announcements", nil, &result)
