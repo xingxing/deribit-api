@@ -1,10 +1,14 @@
 package rest
 
 import (
+	restmodels "deribit-api/internal/rest/models"
 	"deribit-api/pkg/deribit"
+	"deribit-api/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/shopspring/decimal"
+	"io"
 
 	"net/http"
 	"net/url"
@@ -12,6 +16,11 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+)
+
+const (
+	StdDepth    = 10
+	BtcTickSize = 0.5
 )
 
 type DeribitRestClient struct {
@@ -106,7 +115,12 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	req.Header.Set("Content-Type", "application/json")
 
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Println("Failed to sync logger")
+		}
+	}(logger)
 	sugar := logger.Sugar()
 
 	sugar.Debugf("Sending request to URL: %s", req.URL.String())
@@ -114,7 +128,12 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("Failed to close response body")
+		}
+	}(resp.Body)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, errors.New(fmt.Sprintf("Request failed: %s", resp.Status))
@@ -140,85 +159,88 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	return deribitResponse, nil
 }
 
-//func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (OrderBook, error) {
-//	depthValue := STD_DEPTH
-//	if depth != nil {
-//		depthValue = *depth
-//	}
-//
-//	params := map[string]interface{}{
-//		"instrument_name": instrument,
-//		"depth":           depthValue,
-//	}
-//
-//	result, err := d.request("public/get_order_book", params, false)
-//	if err != nil {
-//		return OrderBook{}, err
-//	}
-//
-//	orderBook := OrderBook{}
-//	orderBookData, _ := json.Marshal(result)
-//	if err := json.Unmarshal(orderBookData, &orderBook); err != nil {
-//		return OrderBook{}, err
-//	}
-//
-//	return orderBook, nil
-//}
-//
-//func (d *DeribitRestClient) GetTicker(instrument string) (decimal.Decimal, error) {
-//	params := map[string]interface{}{
-//		"instrument_name": instrument,
-//	}
-//
-//	response, err := d.request("public/ticker", params, false)
-//	if err != nil {
-//		return decimal.Zero, err
-//	}
-//
-//	lastPrice, exists := response["last_price"]
-//	if !exists {
-//		return decimal.Zero, errors.New("Missing last_price field in response")
-//	}
-//
-//	switch v := lastPrice.(type) {
-//	case float64:
-//		return decimal.NewFromFloat(v), nil
-//	case string:
-//		return decimal.NewFromString(v)
-//	default:
-//		return decimal.Zero, errors.New("Last price is neither a number nor a string")
-//	}
-//}
-//
-//func (d *DeribitRestClient) PlaceLimitOrder(instrument string, price decimal.Decimal, amount decimal.Decimal, direction Direction) (Order, error) {
-//	priceToTick := roundToTickSize(price, BTC_TICK_SIZE)
-//	method := "private/sell"
-//	if direction == DirectionBuy {
-//		method = "private/buy"
-//	}
-//
-//	params := map[string]interface{}{
-//		"instrument_name": instrument,
-//		"price":           priceToTick.String(),
-//		"amount":          amount.String(),
-//		"type":            OrderTypeLimit,
-//		"post_only":       true,
-//	}
-//
-//	orderResult, err := d.request(method, params, true)
-//	if err != nil {
-//		return Order{}, err
-//	}
-//
-//	order := Order{}
-//	orderData, _ := json.Marshal(orderResult["order"])
-//	if err := json.Unmarshal(orderData, &order); err != nil {
-//		return Order{}, err
-//	}
-//
-//	return order, nil
-//}
-//
+func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmodels.OrderBook, error) {
+	depthValue := StdDepth
+	if depth != nil {
+		depthValue = *depth
+	}
+
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+		"depth":           depthValue,
+	}
+
+	result, err := d.request("public/get_order_book", params, false)
+	if err != nil {
+		return restmodels.OrderBook{}, err
+	}
+
+	orderBook := restmodels.OrderBook{}
+	orderBookData, _ := json.Marshal(result)
+	if err := json.Unmarshal(orderBookData, &orderBook); err != nil {
+		return restmodels.OrderBook{}, err
+	}
+
+	return orderBook, nil
+}
+
+func (d *DeribitRestClient) GetTicker(instrument string) (decimal.Decimal, error) {
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+	}
+
+	response, err := d.request("public/ticker", params, false)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	lastPrice, exists := response["last_price"]
+	if !exists {
+		return decimal.Zero, errors.New("missing last_price field in response")
+	}
+
+	switch v := lastPrice.(type) {
+	case float64:
+		return decimal.NewFromFloat(v), nil
+	case string:
+		return decimal.NewFromString(v)
+	default:
+		return decimal.Zero, errors.New("last price is neither a number nor a string")
+	}
+}
+
+func (d *DeribitRestClient) PlaceLimitOrder(instrument string,
+	price decimal.Decimal,
+	amount decimal.Decimal,
+	direction restmodels.Direction) (restmodels.Order, error) {
+	priceToTick := roundToTickSize(price, decimal.NewFromFloat(BtcTickSize))
+	method := "private/sell"
+	if direction == "buy" {
+		method = "private/buy"
+	}
+
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+		"price":           priceToTick.String(),
+		"amount":          amount.String(),
+		"type":            models.OrderTypeLimit,
+		"post_only":       true,
+	}
+
+	orderResult, err := d.request(method, params, true)
+	if err != nil {
+		return restmodels.Order{}, err
+	}
+
+	order := restmodels.Order{}
+	orderData, _ := json.Marshal(orderResult["order"])
+	if err := json.Unmarshal(orderData, &order); err != nil {
+		return restmodels.Order{}, err
+	}
+
+	return order, nil
+}
+
 //func (d *DeribitRestClient) PlaceMarketOrder(instrument string, amount decimal.Decimal, direction Direction) (Order, error) {
 //	amountF64, exact := amount.Float64()
 //	if !exact {
