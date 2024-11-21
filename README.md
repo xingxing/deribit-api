@@ -9,23 +9,26 @@ V2 API Documentation: https://docs.deribit.com/v2/
 package main
 
 import (
-	"github.com/frankrap/deribit-api"
-	"github.com/frankrap/deribit-api/models"
+	"deribit-api/internal/websocket"
+	"deribit-api/pkg/deribit"
+	"deribit-api/pkg/models"
 	"log"
 )
 
 func main() {
-	cfg := &deribit.Configuration{
-		Addr:          deribit.TestBaseURL,
-		ApiKey:        "AsJTU16U",
-		SecretKey:     "mM5_K8LVxztN6TjjYpv_cJVGQBvk4jglrEpqkw1b87U",
-		AutoReconnect: true,
-		DebugMode:     true,
-	}
-	client := deribit.New(cfg)
+	cfg := deribit.GetConfig()
+	println(cfg.ApiKey)
+	println(cfg.SecretKey)
+	client := websocket.New(cfg)
 
-	client.GetTime()
-	client.Test()
+	_, g_err := client.GetTime()
+	if g_err != nil {
+		return
+	}
+	_, t_err := client.Test()
+	if t_err != nil {
+		return
+	}
 
 	var err error
 
@@ -84,88 +87,89 @@ func main() {
 
 	// Subscribe
 	client.On("announcements", func(e *models.AnnouncementsNotification) {
-    
-    })
-    client.On("book.ETH-PERPETUAL.100.1.100ms", func(e *models.OrderBookGroupNotification) {
 
-    })
-    client.On("book.BTC-PERPETUAL.100ms", func(e *models.OrderBookNotification) {
+	})
+	client.On("book.ETH-PERPETUAL.100.1.100ms", func(e *models.OrderBookGroupNotification) {
 
-    })
-    client.On("book.BTC-PERPETUAL.raw", func(e *models.OrderBookRawNotification) {
+	})
+	client.On("book.BTC-PERPETUAL.100ms", func(e *models.OrderBookNotification) {
 
-    })
-    client.On("deribit_price_index.btc_usd", func(e *models.DeribitPriceIndexNotification) {
+	})
+	client.On("book.BTC-PERPETUAL.raw", func(e *models.OrderBookRawNotification) {
 
-    })
-    client.On("deribit_price_ranking.btc_usd", func(e *models.DeribitPriceRankingNotification) {
+	})
+	client.On("deribit_price_index.btc_usd", func(e *models.DeribitPriceIndexNotification) {
 
-    })
-    client.On("estimated_expiration_price.btc_usd", func(e *models.EstimatedExpirationPriceNotification) {
+	})
+	client.On("deribit_price_ranking.btc_usd", func(e *models.DeribitPriceRankingNotification) {
 
-    })
-    client.On("markprice.options.btc_usd", func(e *models.MarkpriceOptionsNotification) {
+	})
+	client.On("estimated_expiration_price.btc_usd", func(e *models.EstimatedExpirationPriceNotification) {
 
-    })
-    client.On("perpetual.BTC-PERPETUAL.raw", func(e *models.PerpetualNotification) {
+	})
+	client.On("markprice.options.btc_usd", func(e *models.MarkpriceOptionsNotification) {
 
-    })
-    client.On("quote.BTC-PERPETUAL", func(e *models.QuoteNotification) {
+	})
+	client.On("perpetual.BTC-PERPETUAL.raw", func(e *models.PerpetualNotification) {
 
-    })
-    client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
+	})
+	client.On("quote.BTC-PERPETUAL", func(e *models.QuoteNotification) {
 
-    })
-    client.On("trades.BTC-PERPETUAL.raw", func(e *models.TradesNotification) {
+	})
+	client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
 
-    })
+	})
+	client.On("trades.BTC-PERPETUAL.raw", func(e *models.TradesNotification) {
 
-    client.On("user.changes.BTC-PERPETUAL.raw", func(e *models.UserChangesNotification) {
+	})
 
-    })
-    client.On("user.changes.future.BTC.raw", func(e *models.UserChangesNotification) {
+	client.On("user.changes.BTC-PERPETUAL.raw", func(e *models.UserChangesNotification) {
 
-    })
-    client.On("user.orders.BTC-PERPETUAL.raw", func(e *models.UserOrderNotification) {
+	})
+	client.On("user.changes.future.BTC.raw", func(e *models.UserChangesNotification) {
 
-    })
-    client.On("user.orders.future.BTC.100ms", func(e *models.UserOrderNotification) {
+	})
+	client.On("user.orders.BTC-PERPETUAL.raw", func(e *models.UserOrderNotification) {
 
-    })
-    client.On("user.portfolio.btc", func(e *models.PortfolioNotification) {
+	})
+	client.On("user.orders.future.BTC.100ms", func(e *models.UserOrderNotification) {
 
-    })
-    client.On("user.trades.BTC-PERPETUAL.raw", func(e *models.UserTradesNotification) {
+	})
+	client.On("user.portfolio.btc", func(e *models.PortfolioNotification) {
 
-    })
-    client.On("user.trades.future.BTC.100ms", func(e *models.UserTradesNotification) {
+	})
+	client.On("user.trades.BTC-PERPETUAL.raw", func(e *models.UserTradesNotification) {
 
-    })
-    
-    client.Subscribe([]string{
-        //"announcements",
-        //"book.BTC-PERPETUAL.none.10.100ms",	// none/1,2,5,10,25,100,250
-        //"book.BTC-PERPETUAL.100ms",	// type: snapshot/change
-        "book.BTC-PERPETUAL.raw",
-        //"deribit_price_index.btc_usd",
-        //"deribit_price_ranking.btc_usd",
-        //"estimated_expiration_price.btc_usd",
-        //"markprice.options.btc_usd",
-        //"perpetual.BTC-PERPETUAL.raw",
-        //"quote.BTC-PERPETUAL",
-        //"ticker.BTC-PERPETUAL.raw",
-        "trades.BTC-PERPETUAL.raw",
-        //"user.changes.BTC-PERPETUAL.raw",
-        //"user.changes.future.BTC.raw",
-        "user.orders.BTC-PERPETUAL.raw",
-        //"user.orders.future.BTC.100ms",
-        //"user.portfolio.btc",
-        //"user.trades.BTC-PERPETUAL.raw",
-        //"user.trades.future.BTC.100ms",
-    })
+	})
+	client.On("user.trades.future.BTC.100ms", func(e *models.UserTradesNotification) {
+
+	})
+
+	client.Subscribe([]string{
+		//"announcements",
+		//"book.BTC-PERPETUAL.none.10.100ms",	// none/1,2,5,10,25,100,250
+		//"book.BTC-PERPETUAL.100ms",	// type: snapshot/change
+		"book.BTC-PERPETUAL.raw",
+		//"deribit_price_index.btc_usd",
+		//"deribit_price_ranking.btc_usd",
+		//"estimated_expiration_price.btc_usd",
+		//"markprice.options.btc_usd",
+		//"perpetual.BTC-PERPETUAL.raw",
+		//"quote.BTC-PERPETUAL",
+		//"ticker.BTC-PERPETUAL.raw",
+		//"trades.BTC-PERPETUAL.raw",
+		//"user.changes.BTC-PERPETUAL.raw",
+		//"user.changes.future.BTC.raw",
+		//"user.orders.BTC-PERPETUAL.raw",
+		//"user.orders.future.BTC.100ms",
+		//"user.portfolio.btc",
+		//"user.trades.BTC-PERPETUAL.raw",
+		//"user.trades.future.BTC.100ms",
+	})
 
 	forever := make(chan bool)
-	<- forever
+	<-forever
 }
+
 
 ```
