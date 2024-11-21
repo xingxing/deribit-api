@@ -1,15 +1,17 @@
-package deribit
+package websocket
 
 import (
+	websocketmodels "deribit-api/internal/websocket/models"
+	"deribit-api/pkg/deribit"
+	"deribit-api/pkg/models"
 	"encoding/json"
-	"github.com/frankrap/deribit-api/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func newClient() *Client {
-	cfg := &Configuration{
-		Addr:          TestBaseURL,
+	cfg := &deribit.Configuration{
+		Addr:          deribit.TestBaseURL,
 		ApiKey:        "AsJTU16U",
 		SecretKey:     "mM5_K8LVxztN6TjjYpv_cJVGQBvk4jglrEpqkw1b87U",
 		AutoReconnect: true,
@@ -142,7 +144,7 @@ func TestJsonOmitempty(t *testing.T) {
 		//Price:          6000.0,
 		Type:        "limit",
 		TimeInForce: "good_til_cancelled",
-		MaxShow:     Float64Pointer(40.0),
+		MaxShow:     websocketmodels.Float64Pointer(40.0),
 	}
 	data, _ := json.Marshal(params)
 	t.Log(string(data))

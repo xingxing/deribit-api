@@ -1,12 +1,14 @@
-package deribit
+package websocket
 
 import (
 	"context"
+	"deribit-api/internal/websocket/models"
+	"deribit-api/pkg/deribit"
+	websocketmodels "deribit-api/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/chuckpreslar/emission"
-	"github.com/frankrap/deribit-api/models"
 	"github.com/sourcegraph/jsonrpc2"
 	"log"
 	"net/http"
@@ -16,33 +18,9 @@ import (
 	"time"
 )
 
-const (
-	RealBaseURL = "wss://www.deribit.com/ws/api/v2/"
-	TestBaseURL = "wss://test.deribit.com/ws/api/v2/"
-)
-
-const (
-	MaxTryTimes = 10000
-)
-
 var (
 	ErrAuthenticationIsRequired = errors.New("authentication is required")
 )
-
-// Event is wrapper of received event
-type Event struct {
-	Channel string          `json:"channel"`
-	Data    json.RawMessage `json:"data"`
-}
-
-type Configuration struct {
-	Ctx           context.Context
-	Addr          string `json:"addr"`
-	ApiKey        string `json:"api_key"`
-	SecretKey     string `json:"secret_key"`
-	AutoReconnect bool   `json:"auto_reconnect"`
-	DebugMode     bool   `json:"debug_mode"`
-}
 
 type Client struct {
 	ctx           context.Context
@@ -69,7 +47,7 @@ type Client struct {
 	emitter *emission.Emitter
 }
 
-func New(cfg *Configuration) *Client {
+func New(cfg *deribit.Configuration) *Client {
 	ctx := cfg.Ctx
 	if ctx == nil {
 		ctx = context.Background()
@@ -128,12 +106,12 @@ func (c *Client) subscribe(channels []string) {
 	}
 
 	if len(publicChannels) > 0 {
-		c.PublicSubscribe(&models.SubscribeParams{
+		c.PublicSubscribe(&websocketmodels.SubscribeParams{
 			Channels: publicChannels,
 		})
 	}
 	if len(privateChannels) > 0 {
-		c.PrivateSubscribe(&models.SubscribeParams{
+		c.PrivateSubscribe(&websocketmodels.SubscribeParams{
 			Channels: privateChannels,
 		})
 	}
@@ -151,7 +129,7 @@ func (c *Client) start() error {
 	c.rpcConn = nil
 	c.heartCancel = make(chan struct{})
 
-	for i := 0; i < MaxTryTimes; i++ {
+	for i := 0; i < deribit.MaxTryTimes; i++ {
 		conn, _, err := c.connect()
 		if err != nil {
 			log.Println(err)
@@ -167,7 +145,7 @@ func (c *Client) start() error {
 		return errors.New("connect fail")
 	}
 
-	c.rpcConn = jsonrpc2.NewConn(context.Background(), NewObjectStream(c.conn), c)
+	c.rpcConn = jsonrpc2.NewConn(context.Background(), models.NewObjectStream(c.conn), c)
 
 	c.setIsConnected(true)
 
@@ -181,7 +159,7 @@ func (c *Client) start() error {
 	// subscribe
 	c.subscribe(c.subscriptions)
 
-	c.SetHeartbeat(&models.SetHeartbeatParams{Interval: 30})
+	c.SetHeartbeat(&websocketmodels.SetHeartbeatParams{Interval: 30})
 
 	if c.autoReconnect {
 		go c.reconnect()
@@ -204,14 +182,14 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 		return errors.New("not connected")
 	}
 	if params == nil {
-		params = emptyParams
+		params = models.EmptyParams
 	}
 
-	if token, ok := params.(privateParams); ok {
+	if token, ok := params.(models.PrivateParams); ok {
 		if c.auth.token == "" {
 			return ErrAuthenticationIsRequired
 		}
-		token.setToken(c.auth.token)
+		token.SetToken(c.auth.token)
 	}
 
 	return c.rpcConn.Call(c.ctx, method, params, result)
@@ -219,11 +197,10 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 
 // Handle implements jsonrpc2.Handler
 func (c *Client) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
-	//log.Printf("Handle %v", req.Method)
 	if req.Method == "subscription" {
 		// update events
 		if req.Params != nil && len(*req.Params) > 0 {
-			var event Event
+			var event models.Event
 			if err := json.Unmarshal(*req.Params, &event); err != nil {
 				//c.setError(err)
 				return
