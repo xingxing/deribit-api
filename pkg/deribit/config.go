@@ -3,8 +3,10 @@ package deribit
 import "context"
 
 const (
-	RealBaseURL = "wss://www.deribit.com/ws/api/v2/"
-	TestBaseURL = "wss://test.deribit.com/ws/api/v2/"
+	RealBaseURL     = "wss://www.deribit.com/ws/api/v2/"
+	TestBaseURL     = "wss://test.deribit.com/ws/api/v2/"
+	RealRestBaseURL = "https://www.deribit.com/ws/api/v2/"
+	TestRestBaseURL = "https://test.deribit.com/ws/api/v2/"
 )
 
 const (
@@ -18,4 +20,6 @@ type Configuration struct {
 	SecretKey     string `json:"secret_key"`
 	AutoReconnect bool   `json:"auto_reconnect"`
 	DebugMode     bool   `json:"debug_mode"`
+	WSBaseURL     string `json:"ws_base_url"`
+	RestBaseURL   string `json:"rest_base_url"`
 }
