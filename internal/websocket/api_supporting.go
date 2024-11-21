@@ -1,6 +1,8 @@
-package deribit
+package websocket
 
-import "github.com/frankrap/deribit-api/models"
+import (
+	"deribit-api/pkg/models"
+)
 
 func (c *Client) GetTime() (result int64, err error) {
 	err = c.Call("public/get_time", nil, &result)
