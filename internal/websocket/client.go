@@ -2,9 +2,9 @@ package websocket
 
 import (
 	"context"
-	"deribit-api/internal/websocket/models"
+	websocketmodels "deribit-api/internal/websocket/models"
 	"deribit-api/pkg/deribit"
-	websocketmodels "deribit-api/pkg/models"
+	"deribit-api/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -106,12 +106,12 @@ func (c *Client) subscribe(channels []string) {
 	}
 
 	if len(publicChannels) > 0 {
-		c.PublicSubscribe(&websocketmodels.SubscribeParams{
+		c.PublicSubscribe(&models.SubscribeParams{
 			Channels: publicChannels,
 		})
 	}
 	if len(privateChannels) > 0 {
-		c.PrivateSubscribe(&websocketmodels.SubscribeParams{
+		c.PrivateSubscribe(&models.SubscribeParams{
 			Channels: privateChannels,
 		})
 	}
@@ -145,7 +145,7 @@ func (c *Client) start() error {
 		return errors.New("connect fail")
 	}
 
-	c.rpcConn = jsonrpc2.NewConn(context.Background(), models.NewObjectStream(c.conn), c)
+	c.rpcConn = jsonrpc2.NewConn(context.Background(), websocketmodels.NewObjectStream(c.conn), c)
 
 	c.setIsConnected(true)
 
@@ -159,7 +159,7 @@ func (c *Client) start() error {
 	// subscribe
 	c.subscribe(c.subscriptions)
 
-	c.SetHeartbeat(&websocketmodels.SetHeartbeatParams{Interval: 30})
+	c.SetHeartbeat(&models.SetHeartbeatParams{Interval: 30})
 
 	if c.autoReconnect {
 		go c.reconnect()
@@ -182,10 +182,10 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 		return errors.New("not connected")
 	}
 	if params == nil {
-		params = models.EmptyParams
+		params = websocketmodels.EmptyParams
 	}
 
-	if token, ok := params.(models.PrivateParams); ok {
+	if token, ok := params.(websocketmodels.PrivateParams); ok {
 		if c.auth.token == "" {
 			return ErrAuthenticationIsRequired
 		}
@@ -200,7 +200,7 @@ func (c *Client) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 	if req.Method == "subscription" {
 		// update events
 		if req.Params != nil && len(*req.Params) > 0 {
-			var event models.Event
+			var event websocketmodels.Event
 			if err := json.Unmarshal(*req.Params, &event); err != nil {
 				//c.setError(err)
 				return
