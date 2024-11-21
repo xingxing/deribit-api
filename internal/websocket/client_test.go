@@ -11,7 +11,7 @@ import (
 
 func newClient() *Client {
 	cfg := &deribit.Configuration{
-		Addr:          deribit.TestBaseURL,
+		WsAddr:        deribit.TestBaseURL,
 		ApiKey:        "AsJTU16U",
 		SecretKey:     "mM5_K8LVxztN6TjjYpv_cJVGQBvk4jglrEpqkw1b87U",
 		AutoReconnect: true,
