@@ -17,7 +17,7 @@ func newClient() *Client {
 		AutoReconnect: true,
 		DebugMode:     true,
 	}
-	client := New(cfg)
+	client := NewDeribitWsClient(cfg)
 	return client
 }
 

@@ -47,7 +47,7 @@ type Client struct {
 	emitter *emission.Emitter
 }
 
-func New(cfg *deribit.Configuration) *Client {
+func NewDeribitWsClient(cfg *deribit.Configuration) *Client {
 	ctx := cfg.Ctx
 	if ctx == nil {
 		ctx = context.Background()
