@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"math/big"
 	"sort"
 	"time"
@@ -14,9 +13,6 @@ type Decimal struct {
 }
 
 func NewDecimalFromFloat(f float64) (Decimal, error) {
-	if f != f { // Check for NaN
-		return Decimal{}, errors.New("Invalid value")
-	}
 	return Decimal{big.NewFloat(f)}, nil
 }
 

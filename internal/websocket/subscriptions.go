@@ -127,7 +127,7 @@ func (c *Client) subscriptionsProcess(event *websockecmodels.Event) {
 	} else if strings.HasPrefix(event.Channel, "user.orders") {
 		if string(event.Data)[0] == '{' {
 			var notification models.UserOrderNotification
-			var order models.Order
+			var order websockecmodels.Order
 			err := jsoniter.Unmarshal(event.Data, &order)
 			if err != nil {
 				log.Printf("%v", err)

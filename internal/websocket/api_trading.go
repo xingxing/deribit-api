@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	models2 "deribit-api/internal/websocket/models"
 	"deribit-api/pkg/models"
 )
 
@@ -19,7 +20,7 @@ func (c *Client) Edit(params *models.EditParams) (result models.EditResponse, er
 	return
 }
 
-func (c *Client) Cancel(params *models.CancelParams) (result models.Order, err error) {
+func (c *Client) Cancel(params *models.CancelParams) (result models2.Order, err error) {
 	err = c.Call("private/cancel", params, &result)
 	return
 }
@@ -49,22 +50,22 @@ func (c *Client) GetMargins(params *models.GetMarginsParams) (result models.GetM
 	return
 }
 
-func (c *Client) GetOpenOrdersByCurrency(params *models.GetOpenOrdersByCurrencyParams) (result []models.Order, err error) {
+func (c *Client) GetOpenOrdersByCurrency(params *models.GetOpenOrdersByCurrencyParams) (result []models2.Order, err error) {
 	err = c.Call("private/get_open_orders_by_currency", params, &result)
 	return
 }
 
-func (c *Client) GetOpenOrdersByInstrument(params *models.GetOpenOrdersByInstrumentParams) (result []models.Order, err error) {
+func (c *Client) GetOpenOrdersByInstrument(params *models.GetOpenOrdersByInstrumentParams) (result []models2.Order, err error) {
 	err = c.Call("private/get_open_orders_by_instrument", params, &result)
 	return
 }
 
-func (c *Client) GetOrderHistoryByCurrency(params *models.GetOrderHistoryByCurrencyParams) (result []models.Order, err error) {
+func (c *Client) GetOrderHistoryByCurrency(params *models.GetOrderHistoryByCurrencyParams) (result []models2.Order, err error) {
 	err = c.Call("private/get_order_history_by_currency", params, &result)
 	return
 }
 
-func (c *Client) GetOrderHistoryByInstrument(params *models.GetOrderHistoryByInstrumentParams) (result []models.Order, err error) {
+func (c *Client) GetOrderHistoryByInstrument(params *models.GetOrderHistoryByInstrumentParams) (result []models2.Order, err error) {
 	err = c.Call("private/get_order_history_by_instrument", params, &result)
 	return
 }
@@ -74,7 +75,7 @@ func (c *Client) GetOrderMarginByIDs(params *models.GetOrderMarginByIDsParams) (
 	return
 }
 
-func (c *Client) GetOrderState(params *models.GetOrderStateParams) (result models.Order, err error) {
+func (c *Client) GetOrderState(params *models.GetOrderStateParams) (result models2.Order, err error) {
 	err = c.Call("private/get_order_state", params, &result)
 	return
 }
