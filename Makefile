@@ -21,7 +21,7 @@ lint-simple: ## Run linter
 	gofmt -l -w .
 	goimports -l -w .
 
-vulncheck: ## Check for vulnerabilities
+vulnerability-check: ## Check for vulnerabilities
 	govulncheck ./...
 
 build: ## Build examples
