@@ -5,32 +5,10 @@ import (
 	"deribit-api/pkg/deribit"
 	"deribit-api/pkg/models"
 	"log"
-	"os"
-	"strconv"
 )
 
-func getEnvWithDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getConfig() *deribit.Configuration {
-	autoReconnect, _ := strconv.ParseBool(getEnvWithDefault("DERIBIT_AUTO_RECONNECT", "true"))
-	debugMode, _ := strconv.ParseBool(getEnvWithDefault("DERIBIT_DEBUG_MODE", "true"))
-
-	return &deribit.Configuration{
-		Addr:          deribit.TestBaseURL,
-		ApiKey:        getEnvWithDefault("DERIBIT_API_KEY", ""),
-		SecretKey:     getEnvWithDefault("DERIBIT_API_SECRET", ""),
-		AutoReconnect: autoReconnect,
-		DebugMode:     debugMode,
-	}
-}
-
 func main() {
-	cfg := getConfig()
+	cfg := deribit.GetConfig()
 	println(cfg.ApiKey)
 	println(cfg.SecretKey)
 	client := websocket.New(cfg)
