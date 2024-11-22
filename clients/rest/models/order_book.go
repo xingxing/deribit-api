@@ -2,6 +2,8 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/shopspring/decimal"
 	"math/big"
 	"sort"
 	"time"
@@ -21,65 +23,73 @@ func (d Decimal) Cmp(other Decimal) int {
 }
 
 type PriceLevel struct {
-	Price  Decimal `json:"price"`
-	Amount Decimal `json:"amount"`
+	Price  decimal.Decimal
+	Amount decimal.Decimal
 }
 
 type PriceLevels []PriceLevel
+
+type OrderBook struct {
+	Asks      PriceLevels
+	Bids      PriceLevels
+	Timestamp time.Time
+}
 
 func (p PriceLevels) Len() int           { return len(p) }
 func (p PriceLevels) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p PriceLevels) Less(i, j int) bool { return p[i].Price.Cmp(p[j].Price) < 0 }
 
-type OrderBook struct {
-	Asks      PriceLevels `json:"asks"`
-	Bids      PriceLevels `json:"bids"`
-	Timestamp time.Time   `json:"timestamp"`
-}
-
 func (o *OrderBook) UnmarshalJSON(data []byte) error {
-	type OrderBookHelper struct {
-		Asks      [][2]float64 `json:"asks"`
-		Bids      [][2]float64 `json:"bids"`
-		Timestamp int64        `json:"timestamp"`
-	}
-
-	var helper OrderBookHelper
-	if err := json.Unmarshal(data, &helper); err != nil {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 
 	var asks, bids PriceLevels
 
-	for _, ask := range helper.Asks {
-		price, err := NewDecimalFromFloat(ask[0])
-		if err != nil {
-			return err
+	// Parse asks
+	if asksRaw, ok := raw["asks"].([]interface{}); ok {
+		for _, v := range asksRaw {
+			if level, ok := v.([]interface{}); ok && len(level) >= 2 {
+				price, ok1 := level[0].(float64)
+				amount, ok2 := level[1].(float64)
+				if !ok1 || !ok2 {
+					return fmt.Errorf("invalid ask price/amount format")
+				}
+				asks = append(asks, PriceLevel{
+					Price:  decimal.NewFromFloat(price),
+					Amount: decimal.NewFromFloat(amount),
+				})
+			}
 		}
-		amount, err := NewDecimalFromFloat(ask[1])
-		if err != nil {
-			return err
-		}
-		asks = append(asks, PriceLevel{Price: price, Amount: amount})
 	}
 
-	for _, bid := range helper.Bids {
-		price, err := NewDecimalFromFloat(bid[0])
-		if err != nil {
-			return err
+	// Parse bids
+	if bidsRaw, ok := raw["bids"].([]interface{}); ok {
+		for _, v := range bidsRaw {
+			if level, ok := v.([]interface{}); ok && len(level) >= 2 {
+				price, ok1 := level[0].(float64)
+				amount, ok2 := level[1].(float64)
+				if !ok1 || !ok2 {
+					return fmt.Errorf("invalid bid price/amount format")
+				}
+				bids = append(bids, PriceLevel{
+					Price:  decimal.NewFromFloat(price),
+					Amount: decimal.NewFromFloat(amount),
+				})
+			}
 		}
-		amount, err := NewDecimalFromFloat(bid[1])
-		if err != nil {
-			return err
-		}
-		bids = append(bids, PriceLevel{Price: price, Amount: amount})
 	}
 
-	sort.Sort(asks)
-	sort.Sort(bids)
+	// Parse timestamp
+	if ts, ok := raw["timestamp"].(float64); ok {
+		o.Timestamp = time.Unix(0, int64(ts)*int64(time.Millisecond))
+	}
+
+	sort.Sort(sort.Reverse(bids)) // Sort bids in descending order
+	sort.Sort(asks)               // Sort asks in ascending order
 
 	o.Asks = asks
 	o.Bids = bids
-	o.Timestamp = time.Unix(0, helper.Timestamp*int64(time.Millisecond))
 	return nil
 }

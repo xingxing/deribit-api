@@ -1,23 +1,20 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	restmodels "github.com/joaquinbejar/deribit-api/clients/rest/models"
 	"github.com/joaquinbejar/deribit-api/pkg/deribit"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
+	"github.com/sirupsen/logrus"
 	"io"
-	"log"
-
-	"github.com/shopspring/decimal"
-
-	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
-	"go.uber.org/zap"
+	"github.com/shopspring/decimal"
+	"net/http"
 )
 
 const (
@@ -31,6 +28,7 @@ type DeribitRestClient struct {
 	ApiSecret   string
 	BaseURL     string
 	AccessToken *string
+	Logger      *logrus.Logger
 }
 
 func NewDeribitRestClient(cfg *deribit.Configuration) *DeribitRestClient {
@@ -40,137 +38,121 @@ func NewDeribitRestClient(cfg *deribit.Configuration) *DeribitRestClient {
 		ApiSecret:   cfg.SecretKey,
 		BaseURL:     cfg.RestAddr,
 		AccessToken: nil,
+		Logger:      cfg.Logger,
 	}
 }
 
 func (d *DeribitRestClient) GetAuthToken() (string, error) {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+	baseURL := strings.Replace(d.BaseURL, "/ws", "", 1)
+	d.Logger.Debugf("Original Base URL: %s", baseURL)
 
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	d.Logger.Debugf("URL after trim: %s", baseURL)
+
+	authURL := baseURL + "/public/auth"
+	d.Logger.Debugf("Final auth URL: %s", authURL)
+
+	params := url.Values{}
+	params.Set("grant_type", "client_credentials")
+	params.Set("client_id", d.ClientID)
+	params.Set("client_secret", d.ApiSecret)
+
+	fullURL := authURL + "?" + params.Encode()
+	d.Logger.Debugf("Full URL with params: %s", fullURL)
+
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := d.Client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	d.Logger.Debugf("Response status: %s", resp.Status)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+	d.Logger.Debugf("Response body: %s", string(body))
+
+	var result struct {
+		Result struct {
+			AccessToken string `json:"access_token"`
+		} `json:"result"`
+		Error *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if result.Error != nil {
+		return "", fmt.Errorf("API error %d: %s", result.Error.Code, result.Error.Message)
+	}
+
+	d.AccessToken = &result.Result.AccessToken
+	return *d.AccessToken, nil
+}
+
+func (d *DeribitRestClient) request(method string, params map[string]interface{}, private bool) (map[string]interface{}, error) {
 	request := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      1,
-		"method":  "public/auth",
-		"params": map[string]interface{}{
-			"grant_type":    "client_credentials",
-			"client_id":     d.ClientID,
-			"client_secret": d.ApiSecret,
-			"timestamp":     timestamp,
-		},
+		"method":  method,
+		"params":  params,
 	}
 
 	reqBody, err := json.Marshal(request)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/public/auth", d.BaseURL), strings.NewReader(string(reqBody)))
+	req, err := http.NewRequest("POST", d.BaseURL, bytes.NewReader(reqBody))
 	if err != nil {
-		log.Printf("Failed to create request: %v", err)
-		return "", err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
+	if private && d.AccessToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*d.AccessToken)
+	}
 
 	resp, err := d.Client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var response map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return "", err
+	var result struct {
+		JSONRPC string                 `json:"jsonrpc"`
+		ID      int                    `json:"id"`
+		Result  map[string]interface{} `json:"result"`
+		Error   map[string]interface{} `json:"error"`
 	}
 
-	if errorField, exists := response["error"]; exists {
-		errorMap := errorField.(map[string]interface{})
-		return "", errors.New(fmt.Sprintf("API error: code %d, message %s", int(errorMap["code"].(float64)), errorMap["message"].(string)))
-	}
-
-	var auth AuthResponse
-	authResult, _ := json.Marshal(response["result"])
-	if err := json.Unmarshal(authResult, &auth); err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to parse auth response: %v", err))
-	}
-
-	return auth.AccessToken, nil
-}
-
-func (d *DeribitRestClient) request(method string, params map[string]interface{}, private bool) (map[string]interface{}, error) {
-	methodURL := fmt.Sprintf("%s/%s", d.BaseURL, method)
-	queryParams := url.Values{}
-	for key, value := range params {
-		queryParams.Set(key, fmt.Sprintf("%v", value))
-	}
-
-	methodURL += "?" + queryParams.Encode()
-	req, err := http.NewRequest("GET", methodURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if private {
-		token, err := d.GetAuthToken()
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	logger, _ := zap.NewProduction()
-	defer func(logger *zap.Logger) {
-		err := logger.Sync()
-		if err != nil {
-			fmt.Println("Failed to sync logger")
-		}
-	}(logger)
-	sugar := logger.Sugar()
-
-	sugar.Debugf("Sending request to URL: %s", req.URL.String())
-	resp, err := d.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			fmt.Println("Failed to close response body")
-		}
-	}(resp.Body)
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, errors.New(fmt.Sprintf("Request failed: %s", resp.Status))
-	}
-
-	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-	sugar.Debugf("Request response: %v", result)
-
-	if errorField, exists := result["error"]; exists {
-		errorMap := errorField.(map[string]interface{})
-		return nil, errors.New(fmt.Sprintf("API error: code %d, message %s", int(errorMap["code"].(float64)), errorMap["message"].(string)))
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	var deribitResponse map[string]interface{}
-	responseData, _ := json.Marshal(result["result"])
-	if err := json.Unmarshal(responseData, &deribitResponse); err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to deserialize response: %v", err))
+	if result.Error != nil {
+		return nil, fmt.Errorf("API error: %v", result.Error)
 	}
 
-	return deribitResponse, nil
+	return result.Result, nil
 }
 
 func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmodels.OrderBook, error) {
-	depthValue := StdDepth
-	if depth != nil {
-		depthValue = *depth
-	}
-
 	params := map[string]interface{}{
 		"instrument_name": instrument,
-		"depth":           depthValue,
+		"depth":           depth,
 	}
 
 	result, err := d.request("public/get_order_book", params, false)
@@ -178,10 +160,14 @@ func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmod
 		return restmodels.OrderBook{}, err
 	}
 
-	orderBook := restmodels.OrderBook{}
-	orderBookData, _ := json.Marshal(result)
-	if err := json.Unmarshal(orderBookData, &orderBook); err != nil {
-		return restmodels.OrderBook{}, err
+	var orderBook restmodels.OrderBook
+	resultBytes, err := json.Marshal(result)
+	if err != nil {
+		return restmodels.OrderBook{}, fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	if err := json.Unmarshal(resultBytes, &orderBook); err != nil {
+		return restmodels.OrderBook{}, fmt.Errorf("failed to unmarshal order book: %w", err)
 	}
 
 	return orderBook, nil

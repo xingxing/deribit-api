@@ -2,6 +2,7 @@ package deribit
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 )
@@ -24,6 +25,19 @@ func getEnvWithDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+type Configuration struct {
+	Ctx           context.Context
+	WsAddr        string `json:"ws_addr"`
+	RestAddr      string `json:"rest_addr"`
+	ApiKey        string `json:"api_key"`
+	SecretKey     string `json:"secret_key"`
+	AutoReconnect bool   `json:"auto_reconnect"`
+	DebugMode     bool   `json:"debug_mode"`
+	WSBaseURL     string `json:"ws_base_url"`
+	RestBaseURL   string `json:"rest_base_url"`
+	Logger        *logrus.Logger
+}
+
 func GetConfig() *Configuration {
 	autoReconnect, _ := strconv.ParseBool(getEnvWithDefault("DERIBIT_AUTO_RECONNECT", "true"))
 	debugMode, _ := strconv.ParseBool(getEnvWithDefault("DERIBIT_DEBUG_MODE", "true"))
@@ -36,6 +50,18 @@ func GetConfig() *Configuration {
 		restBaseURL = RealRestBaseURL
 	}
 
+	// Configure logger
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	if debugMode {
+		logger.SetLevel(logrus.DebugLevel)
+	} else {
+		logger.SetLevel(logrus.InfoLevel)
+	}
+
 	return &Configuration{
 		WsAddr:        wsBaseURL,
 		RestAddr:      restBaseURL,
@@ -43,17 +69,6 @@ func GetConfig() *Configuration {
 		SecretKey:     getEnvWithDefault("DERIBIT_API_SECRET", ""),
 		AutoReconnect: autoReconnect,
 		DebugMode:     debugMode,
+		Logger:        logger,
 	}
-}
-
-type Configuration struct {
-	Ctx           context.Context
-	WsAddr        string `json:"ws_addr"`
-	RestAddr      string `json:"rest_addr"`
-	ApiKey        string `json:"api_key"`
-	SecretKey     string `json:"secret_key"`
-	AutoReconnect bool   `json:"auto_reconnect"`
-	DebugMode     bool   `json:"debug_mode"`
-	WSBaseURL     string `json:"ws_base_url"`
-	RestBaseURL   string `json:"rest_base_url"`
 }
