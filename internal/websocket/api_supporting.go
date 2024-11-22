@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"deribit-api/pkg/models"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
 func (c *Client) GetTime() (result int64, err error) {

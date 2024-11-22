@@ -1,4 +1,4 @@
-module deribit-api
+module github.com/joaquinbejar/deribit-api
 
 go 1.23.3
 

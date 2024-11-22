@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"deribit-api/pkg/models"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
 func (c *Client) GetAnnouncements() (result []models.Announcement, err error) {

@@ -1,8 +1,8 @@
 package websocket
 
 import (
-	models2 "deribit-api/internal/websocket/models"
-	"deribit-api/pkg/models"
+	models2 "github.com/joaquinbejar/deribit-api/internal/websocket/models"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
 func (c *Client) Buy(params *models.BuyParams) (result models.BuyResponse, err error) {

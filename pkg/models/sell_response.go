@@ -1,6 +1,6 @@
 package models
 
-import models2 "deribit-api/internal/websocket/models"
+import models2 "github.com/joaquinbejar/deribit-api/internal/websocket/models"
 
 type SellResponse struct {
 	Trades []Trade       `json:"trades"`
