@@ -9,9 +9,9 @@ V2 API Documentation: https://docs.deribit.com/v2/
 package main
 
 import (
-	"deribit-api/internal/websocket"
-	"deribit-api/pkg/deribit"
-	"deribit-api/pkg/models"
+	"github.com/joaquinbejar/deribit-api/clients/websocket"
+	"github.com/joaquinbejar/deribit-api/pkg/deribit"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"log"
 )
 
@@ -19,14 +19,14 @@ func main() {
 	cfg := deribit.GetConfig()
 	println(cfg.ApiKey)
 	println(cfg.SecretKey)
-	client := websocket.New(cfg)
+	client := websocket.NewDeribitWsClient(cfg)
 
-	_, g_err := client.GetTime()
-	if g_err != nil {
+	_, gErr := client.GetTime()
+	if gErr != nil {
 		return
 	}
-	_, t_err := client.Test()
-	if t_err != nil {
+	_, tErr := client.Test()
+	if tErr != nil {
 		return
 	}
 
@@ -170,6 +170,4 @@ func main() {
 	forever := make(chan bool)
 	<-forever
 }
-
-
 ```

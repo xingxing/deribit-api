@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	websocketmodels "github.com/joaquinbejar/deribit-api/internal/websocket/models"
+	websocketmodels "github.com/joaquinbejar/deribit-api/clients/websocket/models"
 	"github.com/joaquinbejar/deribit-api/pkg/deribit"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"log"

@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	websockecmodels "github.com/joaquinbejar/deribit-api/internal/websocket/models"
+	websockecmodels "github.com/joaquinbejar/deribit-api/clients/websocket/models"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"log"
 	"strings"

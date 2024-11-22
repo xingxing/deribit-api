@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	restmodels "github.com/joaquinbejar/deribit-api/internal/rest/models"
+	restmodels "github.com/joaquinbejar/deribit-api/clients/rest/models"
 	"github.com/joaquinbejar/deribit-api/pkg/deribit"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"io"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/joaquinbejar/deribit-api/internal/websocket"
+	"github.com/joaquinbejar/deribit-api/clients/websocket"
 	"github.com/joaquinbejar/deribit-api/pkg/deribit"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"log"
