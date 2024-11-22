@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -103,19 +102,21 @@ func (d *DeribitRestClient) GetAuthToken() (string, error) {
 }
 
 func (d *DeribitRestClient) request(method string, params map[string]interface{}, private bool) (map[string]interface{}, error) {
-	request := map[string]interface{}{
-		"jsonrpc": "2.0",
-		"id":      1,
-		"method":  method,
-		"params":  params,
+	baseURL := strings.Replace(d.BaseURL, "/ws", "", 1)
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	fullURL := baseURL + "/" + method
+
+	d.Logger.Debugf("Request URL: %s", fullURL)
+	d.Logger.Debugf("Request params: %+v", params)
+
+	urlValues := url.Values{}
+	for key, value := range params {
+		urlValues.Set(key, fmt.Sprintf("%v", value))
 	}
 
-	reqBody, err := json.Marshal(request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
+	fullURL = fullURL + "?" + urlValues.Encode()
 
-	req, err := http.NewRequest("POST", d.BaseURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -131,33 +132,49 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	d.Logger.Debugf("Response body: %s", string(body))
+
 	var result struct {
 		JSONRPC string                 `json:"jsonrpc"`
 		ID      int                    `json:"id"`
 		Result  map[string]interface{} `json:"result"`
-		Error   map[string]interface{} `json:"error"`
+		Error   *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	if result.Error != nil {
-		return nil, fmt.Errorf("API error: %v", result.Error)
+		return nil, fmt.Errorf("API error %d: %s", result.Error.Code, result.Error.Message)
 	}
 
 	return result.Result, nil
 }
 
 func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmodels.OrderBook, error) {
+	depthValue := StdDepth
+	if depth != nil {
+		depthValue = *depth
+	}
+
 	params := map[string]interface{}{
 		"instrument_name": instrument,
-		"depth":           depth,
+		"depth":           depthValue,
 	}
+
+	d.Logger.Debugf("Getting orderbook for %s with depth %d", instrument, depthValue)
 
 	result, err := d.request("public/get_order_book", params, false)
 	if err != nil {
-		return restmodels.OrderBook{}, err
+		return restmodels.OrderBook{}, fmt.Errorf("failed to get orderbook: %w", err)
 	}
 
 	var orderBook restmodels.OrderBook
@@ -166,10 +183,13 @@ func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmod
 		return restmodels.OrderBook{}, fmt.Errorf("failed to marshal result: %w", err)
 	}
 
+	d.Logger.Debugf("Orderbook raw data: %s", string(resultBytes))
+
 	if err := json.Unmarshal(resultBytes, &orderBook); err != nil {
 		return restmodels.OrderBook{}, fmt.Errorf("failed to unmarshal order book: %w", err)
 	}
 
+	d.Logger.Debugf("Parsed orderbook: %+v", orderBook)
 	return orderBook, nil
 }
 
