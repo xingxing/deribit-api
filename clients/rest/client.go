@@ -8,6 +8,7 @@ import (
 	"github.com/joaquinbejar/deribit-api/pkg/deribit"
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"io"
+	"log"
 
 	"github.com/shopspring/decimal"
 
@@ -37,7 +38,7 @@ func NewDeribitRestClient(cfg *deribit.Configuration) *DeribitRestClient {
 		Client:      &http.Client{},
 		ClientID:    cfg.ApiKey,
 		ApiSecret:   cfg.SecretKey,
-		BaseURL:     cfg.RestBaseURL,
+		BaseURL:     cfg.RestAddr,
 		AccessToken: nil,
 	}
 }
@@ -64,6 +65,7 @@ func (d *DeribitRestClient) GetAuthToken() (string, error) {
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/public/auth", d.BaseURL), strings.NewReader(string(reqBody)))
 	if err != nil {
+		log.Printf("Failed to create request: %v", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")

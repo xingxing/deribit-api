@@ -9,8 +9,6 @@ import (
 
 func main() {
 	cfg := deribit.GetConfig()
-	println(cfg.ApiKey)
-	println(cfg.SecretKey)
 	client := websocket.NewDeribitWsClient(cfg)
 
 	_, gErr := client.GetTime()
