@@ -2,12 +2,12 @@ package websocket
 
 import (
 	"context"
-	websocketmodels "deribit-api/internal/websocket/models"
-	"deribit-api/pkg/deribit"
-	"deribit-api/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
+	websocketmodels "github.com/joaquinbejar/deribit-api/internal/websocket/models"
+	"github.com/joaquinbejar/deribit-api/pkg/deribit"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"log"
 	"net/http"
 	"strings"

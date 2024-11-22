@@ -1,10 +1,10 @@
 package websocket
 
 import (
-	websocketmodels "deribit-api/internal/websocket/models"
-	"deribit-api/pkg/deribit"
-	"deribit-api/pkg/models"
 	"encoding/json"
+	websocketmodels "github.com/joaquinbejar/deribit-api/internal/websocket/models"
+	"github.com/joaquinbejar/deribit-api/pkg/deribit"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

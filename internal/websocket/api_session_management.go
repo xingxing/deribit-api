@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"deribit-api/pkg/models"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
 func (c *Client) SetHeartbeat(params *models.SetHeartbeatParams) (result string, err error) {

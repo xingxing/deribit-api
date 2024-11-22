@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"deribit-api/pkg/models"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
 func (c *Client) PublicSubscribe(params *models.SubscribeParams) (result models.SubscribeResponse, err error) {

@@ -1,12 +1,12 @@
 package rest
 
 import (
-	restmodels "deribit-api/internal/rest/models"
-	"deribit-api/pkg/deribit"
-	"deribit-api/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
+	restmodels "github.com/joaquinbejar/deribit-api/internal/rest/models"
+	"github.com/joaquinbejar/deribit-api/pkg/deribit"
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"io"
 
 	"github.com/shopspring/decimal"
