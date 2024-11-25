@@ -4,12 +4,12 @@ go 1.23.3
 
 require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
+	github.com/coder/websocket v1.8.12
 	github.com/json-iterator/go v1.1.12
 	github.com/shopspring/decimal v1.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sourcegraph/jsonrpc2 v0.2.0
-	github.com/stretchr/testify v1.9.0
-	nhooyr.io/websocket v1.8.17
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
