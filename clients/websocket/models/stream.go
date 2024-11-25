@@ -2,13 +2,14 @@ package models
 
 import (
 	"context"
+	"errors"
 	"io"
 
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 )
 
-// A ObjectStream is a jsonrpc2.ObjectStream that uses a WebSocket to
+// ObjectStream is a jsonrpc2.ObjectStream that uses a WebSocket to
 // send and receive JSON-RPC 2.0 objects.
 type ObjectStream struct {
 	conn *websocket.Conn
@@ -28,7 +29,8 @@ func (t ObjectStream) WriteObject(obj interface{}) error {
 // ReadObject implements jsonrpc2.ObjectStream.
 func (t ObjectStream) ReadObject(v interface{}) error {
 	err := wsjson.Read(context.Background(), t.conn, v)
-	if e, ok := err.(*websocket.CloseError); ok {
+	var e *websocket.CloseError
+	if errors.As(err, &e) {
 		if e.Code == websocket.StatusNormalClosure && e.Error() == io.ErrUnexpectedEOF.Error() {
 			// unwrapping this error.
 			err = io.ErrUnexpectedEOF

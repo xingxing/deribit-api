@@ -10,7 +10,7 @@ func (p *Price) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 	var f float64
-	f, err = strconv.ParseFloat(string(data), 0)
+	f, err = strconv.ParseFloat(string(data), 64)
 	if err != nil {
 		return
 	}

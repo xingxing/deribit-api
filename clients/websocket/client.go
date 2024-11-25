@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/chuckpreslar/emission"
+	"github.com/coder/websocket"
 	"github.com/sourcegraph/jsonrpc2"
-	"nhooyr.io/websocket"
 )
 
 var (
@@ -148,33 +148,41 @@ func (c *Client) start() error {
 		c.conn = conn
 		break
 	}
+
 	if c.conn == nil {
 		return errors.New("connect fail")
 	}
 
-	c.rpcConn = jsonrpc2.NewConn(context.Background(), websocketmodels.NewObjectStream(c.conn), c)
+	// Create a new object stream with the nhooyr websocket connection
+	stream := websocketmodels.NewObjectStream(c.conn)
+
+	// Initialize the JSON-RPC connection with the stream
+	c.rpcConn = jsonrpc2.NewConn(c.ctx, stream, c)
 
 	c.setIsConnected(true)
 
-	// auth
+	// Authenticate if credentials are provided
 	if c.apiKey != "" && c.secretKey != "" {
 		if err := c.Auth(c.apiKey, c.secretKey); err != nil {
 			log.Printf("auth error: %v", err)
 		}
 	}
 
-	// subscribe
+	// Subscribe to channels
 	c.subscribe(c.subscriptions)
 
+	// Set heartbeat
 	_, err := c.SetHeartbeat(&models.SetHeartbeatParams{Interval: 30})
 	if err != nil {
 		return err
 	}
 
+	// Start reconnection handler if enabled
 	if c.autoReconnect {
 		go c.reconnect()
 	}
 
+	// Start heartbeat routine
 	go c.heartbeat()
 
 	return nil
@@ -184,7 +192,7 @@ func (c *Client) start() error {
 func (c *Client) Call(method string, params interface{}, result interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("%v", r))
+			err = fmt.Errorf("%v", r)
 		}
 	}()
 
