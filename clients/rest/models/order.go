@@ -1,14 +1,15 @@
 package models
 
 import (
+	"github.com/joaquinbejar/deribit-api/pkg/models"
 	"time"
 )
 
 // Assuming Trade, Direction, decimalFormat are defined elsewhere
 
 type OrderResult struct {
-	Trades []Trade `json:"trades"`
-	Order  Order   `json:"order"`
+	Trades []models.Trade `json:"trades"`
+	Order  Order          `json:"order"`
 }
 
 type OrderType string
@@ -88,29 +89,6 @@ type CancelOrderResponse struct {
 	Amount              float64  `json:"amount"`
 }
 
-type Trade struct {
-	TradeSeq       int       `json:"trade_seq"`
-	TradeID        string    `json:"trade_id"`
-	Timestamp      int64     `json:"timestamp"`
-	TickDirection  int       `json:"tick_direction"`
-	State          string    `json:"state"`
-	ReduceOnly     bool      `json:"reduce_only"`
-	Price          float64   `json:"price"         decimal_format:"deserialize"`
-	PostOnly       bool      `json:"post_only"`
-	OrderType      string    `json:"order_type"`
-	OrderID        string    `json:"order_id"`
-	MatchingID     *string   `json:"matching_id"`
-	MarkPrice      float64   `json:"mark_price"    decimal_format:"deserialize"`
-	Liquidity      string    `json:"liquidity"`
-	Label          string    `json:"label"`
-	InstrumentName string    `json:"instrument_name"`
-	IndexPrice     float64   `json:"index_price"   decimal_format:"deserialize"`
-	FeeCurrency    string    `json:"fee_currency"`
-	Fee            float64   `json:"fee"`
-	Direction      Direction `json:"direction"`
-	Amount         float64   `json:"amount"        decimal_format:"deserialize"`
-}
-
 func createSampleOrder() Order {
 	return Order{
 		Web:            false,
@@ -133,30 +111,6 @@ func createSampleOrder() Order {
 		Timestamp:      time.Now().UnixMilli(),
 		AveragePrice:   0,
 		API:            true,
-		Amount:         1,
-	}
-}
-
-func createSampleTrade() Trade {
-	return Trade{
-		TradeSeq:       1,
-		TradeID:        "trade123",
-		Timestamp:      time.Now().UnixMilli(),
-		TickDirection:  1,
-		State:          "",
-		ReduceOnly:     false,
-		Price:          50000,
-		PostOnly:       false,
-		OrderType:      "",
-		OrderID:        "",
-		MarkPrice:      50000,
-		Liquidity:      "",
-		Label:          "",
-		InstrumentName: "BTC-PERPETUAL",
-		IndexPrice:     49990,
-		FeeCurrency:    "",
-		Fee:            0,
-		Direction:      "buy",
 		Amount:         1,
 	}
 }

@@ -16,11 +16,29 @@ func main() {
 		return
 	}
 
-	depth := 5
-	orderbook, err := client.GetOrderbook("BTC-PERPETUAL", &depth)
+	//depth := 5
+	//orderbook, err := client.GetOrderbook("BTC-PERPETUAL", &depth)
+	//if err != nil {
+	//	cfg.Logger.Errorf("Failed to get orderbook: %v", err)
+	//	return
+	//}
+	//cfg.Logger.Infof("Orderbook: %v", orderbook)
+
+	// Get Funding Rate
+	//fundingRate, err := client.GetCurrentFundingRate("BTC-PERPETUAL")
+	//if err != nil {
+	//	cfg.Logger.Errorf("Failed to get funding rate: %v", err)
+	//	return
+	//} else {
+	//	cfg.Logger.Infof("Funding Rate: %v", fundingRate)
+	//}
+
+	// Get Trades
+	trades, err := client.GetRecentTrades("BTC-PERPETUAL", 10)
 	if err != nil {
-		cfg.Logger.Errorf("Failed to get orderbook: %v", err)
+		cfg.Logger.Errorf("Failed to get trades: %v", err)
 		return
+	} else {
+		cfg.Logger.Infof("Trades: %v", trades)
 	}
-	cfg.Logger.Infof("Orderbook: %v", orderbook)
 }

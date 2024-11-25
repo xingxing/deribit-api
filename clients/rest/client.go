@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"net/http"
@@ -159,6 +160,70 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	return result.Result, nil
 }
 
+// requestInterface makes a request to the Deribit API and returns the result as interface{}
+func (d *DeribitRestClient) requestInterface(method string, params map[string]interface{}, private bool) (interface{}, error) {
+	baseURL := strings.Replace(d.BaseURL, "/ws", "", 1)
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	fullURL := baseURL + "/" + method
+
+	d.Logger.Debugf("Request URL: %s", fullURL)
+	d.Logger.Debugf("Request params: %+v", params)
+
+	urlValues := url.Values{}
+	for key, value := range params {
+		urlValues.Set(key, fmt.Sprintf("%v", value))
+	}
+
+	fullURL = fullURL + "?" + urlValues.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if private && d.AccessToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*d.AccessToken)
+	}
+
+	resp, err := d.Client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			d.Logger.Errorf("Failed to close response body: %v", err)
+		}
+	}(resp.Body)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	d.Logger.Debugf("Response body: %s", string(body))
+
+	var result struct {
+		JSONRPC string      `json:"jsonrpc"`
+		ID      int         `json:"id"`
+		Result  interface{} `json:"result"`
+		Error   *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if result.Error != nil {
+		return nil, fmt.Errorf("API error %d: %s", result.Error.Code, result.Error.Message)
+	}
+
+	return result.Result, nil
+}
+
 func (d *DeribitRestClient) GetOrderbook(instrument string, depth *int) (restmodels.OrderBook, error) {
 	depthValue := StdDepth
 	if depth != nil {
@@ -250,104 +315,75 @@ func (d *DeribitRestClient) PlaceLimitOrder(instrument string,
 	return order, nil
 }
 
-//func (d *DeribitRestClient) PlaceMarketOrder(instrument string, amount decimal.Decimal, direction Direction) (Order, error) {
-//	amountF64, exact := amount.Float64()
-//	if !exact {
-//		return Order{}, errors.New("Could not convert amount to f64")
-//	}
-//
-//	method := "private/sell"
-//	if direction == DirectionBuy {
-//		method = "private/buy"
-//	}
-//
-//	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-//	label := fmt.Sprintf("market%d", timestamp)
-//
-//	params := map[string]interface{}{
-//		"instrument_name": instrument,
-//		"amount":          amountF64,
-//		"type":            OrderTypeMarket,
-//		"label":           label,
-//	}
-//
-//	logger, _ := zap.NewProduction()
-//	defer logger.Sync()
-//	sugar := logger.Sugar()
-//
-//	sugar.Debugf("Placing market order: method=%s, params=%v", method, params)
-//	orderResult, err := d.request(method, params, true)
-//	if err != nil {
-//		return Order{}, err
-//	}
-//
-//	order := Order{}
-//	orderData, _ := json.Marshal(orderResult["order"])
-//	if err := json.Unmarshal(orderData, &order); err != nil {
-//		return Order{}, err
-//	}
-//
-//	return order, nil
-//}
-//
-//func (d *DeribitRestClient) CancelOrder(orderID string) (CancelOrderResponse, error) {
-//	params := map[string]interface{}{
-//		"order_id": orderID,
-//	}
-//
-//	cancelOrderResult, err := d.request("private/cancel", params, true)
-//	if err != nil {
-//		return CancelOrderResponse{}, err
-//	}
-//
-//	cancelOrderResponse := CancelOrderResponse{}
-//	cancelOrderData, _ := json.Marshal(cancelOrderResult)
-//	if err := json.Unmarshal(cancelOrderData, &cancelOrderResponse); err != nil {
-//		return CancelOrderResponse{}, err
-//	}
-//
-//	return cancelOrderResponse, nil
-//}
-//
-//func (d *DeribitRestClient) GetOpenOrders(instrument string) (Orders, error) {
-//	params := map[string]interface{}{
-//		"instrument_name": instrument,
-//	}
-//
-//	result, err := d.request("private/get_open_orders_by_instrument", params, true)
-//	if err != nil {
-//		return Orders{}, err
-//	}
-//
-//	orders := Orders{}
-//	ordersData, _ := json.Marshal(result)
-//	if err := json.Unmarshal(ordersData, &orders); err != nil {
-//		return Orders{}, err
-//	}
-//
-//	return orders, nil
-//}
-//
-//func (d *DeribitRestClient) GetAccountSummary() (AccountSummary, error) {
-//	panic("Not implemented")
-//}
-//
-//func (d *DeribitRestClient) GetPositions() ([]Position, error) {
-//	panic("Not implemented")
-//}
-//
-//func (d *DeribitRestClient) GetPosition(_instrument string) (*Position, error) {
-//	panic("Not implemented")
-//}
-//
-//func (d *DeribitRestClient) GetPortfolioMargins() (PortfolioMargins, error) {
-//	panic("Not implemented")
-//}
-//
-//func (d *DeribitRestClient) SimulatePortfolio(_position Position) (PortfolioMargins, error) {
-//	panic("Not implemented")
-//}
-//
-//func (d *DeribitRestClient) GetFundingRate(_instrument string, _startTimestamp int64, _endTimestamp int64) (decimal.Decimal, error) {
-//	panic("Not implemented")
-//}
+func (d *DeribitRestClient) GetRecentTrades(instrument string, count int) ([]models.Trade, error) {
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+		"count":           count,
+	}
+
+	d.Logger.Debugf("Getting recent trades for %s with count %d", instrument, count)
+
+	result, err := d.request("public/get_last_trades_by_instrument", params, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trades: %w", err)
+	}
+
+	trades, ok := result["trades"].([]interface{})
+	if !ok {
+		return nil, errors.New("invalid trades data format")
+	}
+
+	tradesData, err := json.Marshal(trades)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal trades: %w", err)
+	}
+
+	d.Logger.Debugf("Trades raw data: %s", string(tradesData))
+
+	var tradesList []models.Trade
+	if err := json.Unmarshal(tradesData, &tradesList); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal trades: %w", err)
+	}
+
+	d.Logger.Debugf("Parsed trades: %+v", tradesList)
+	return tradesList, nil
+}
+
+// GetFundingRate retrieves the funding rate for a perpetual instrument
+func (d *DeribitRestClient) GetFundingRate(instrument string, startTime, endTime time.Time) (models.FundingRatePoint, error) {
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+		"start_timestamp": startTime.UnixNano() / 1e6,
+		"end_timestamp":   endTime.UnixNano() / 1e6,
+	}
+
+	d.Logger.Debugf("Getting funding rate for %s between %v and %v", instrument, startTime, endTime)
+
+	result, err := d.requestInterface("public/get_funding_rate_value", params, false)
+	if err != nil {
+		return models.FundingRatePoint{}, fmt.Errorf("failed to get funding rate: %w", err)
+	}
+
+	rate, ok := result.(float64)
+	if !ok {
+		return models.FundingRatePoint{}, fmt.Errorf("unexpected funding rate format in response: %T", result)
+	}
+
+	fundingRate := models.FundingRatePoint{
+		Timestamp: startTime.Unix(),
+		Rate:      rate,
+	}
+
+	d.Logger.Debugf("Parsed funding rate: %+v", fundingRate)
+
+	return fundingRate, nil
+}
+
+// GetCurrentFundingRate is a convenience method that gets the most recent funding rate
+func (d *DeribitRestClient) GetCurrentFundingRate(instrument string) (models.FundingRatePoint, error) {
+	now := time.Now()
+	// Get the rate for the last hour
+	startTime := now.Add(-1 * time.Hour)
+
+	return d.GetFundingRate(instrument, startTime, now)
+}

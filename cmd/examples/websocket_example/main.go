@@ -139,7 +139,7 @@ func main() {
 		//"announcements",
 		//"book.BTC-PERPETUAL.none.10.100ms",	// none/1,2,5,10,25,100,250
 		//"book.BTC-PERPETUAL.100ms",	// type: snapshot/change
-		"book.BTC-PERPETUAL.raw",
+		//"book.BTC-PERPETUAL.raw",
 		//"deribit_price_index.btc_usd",
 		//"deribit_price_ranking.btc_usd",
 		//"estimated_expiration_price.btc_usd",
@@ -147,7 +147,7 @@ func main() {
 		//"perpetual.BTC-PERPETUAL.raw",
 		//"quote.BTC-PERPETUAL",
 		//"ticker.BTC-PERPETUAL.raw",
-		//"trades.BTC-PERPETUAL.raw",
+		"trades.BTC-PERPETUAL.raw",
 		//"user.changes.BTC-PERPETUAL.raw",
 		//"user.changes.future.BTC.raw",
 		//"user.orders.BTC-PERPETUAL.raw",
