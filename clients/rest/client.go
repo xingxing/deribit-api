@@ -70,7 +70,12 @@ func (d *DeribitRestClient) GetAuthToken() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			d.Logger.Errorf("Failed to close response body: %v", err)
+		}
+	}(resp.Body)
 
 	d.Logger.Debugf("Response status: %s", resp.Status)
 
@@ -131,7 +136,12 @@ func (d *DeribitRestClient) request(method string, params map[string]interface{}
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			d.Logger.Errorf("Failed to close response body: %v", err)
+		}
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
