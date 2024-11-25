@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/joaquinbejar/deribit-api/pkg/models"
-	"time"
 )
 
 // Assuming Trade, Direction, decimalFormat are defined elsewhere
@@ -87,30 +86,4 @@ type CancelOrderResponse struct {
 	CreationTimestamp   int64    `json:"creation_timestamp"`
 	API                 bool     `json:"api"`
 	Amount              float64  `json:"amount"`
-}
-
-func createSampleOrder() Order {
-	return Order{
-		Web:            false,
-		TimeInForce:    "good_til_cancelled",
-		Replaced:       false,
-		ReduceOnly:     false,
-		Price:          50000,
-		PostOnly:       true,
-		OrderType:      Limit,
-		Status:         Open,
-		OrderID:        "12345",
-		MaxShow:        10,
-		LastUpdate:     time.Now().UnixMilli(),
-		Label:          "test_order",
-		IsRebalance:    new(bool),
-		IsLiquidation:  false,
-		InstrumentName: "BTC-PERPETUAL",
-		FilledAmount:   0,
-		Direction:      "buy",
-		Timestamp:      time.Now().UnixMilli(),
-		AveragePrice:   0,
-		API:            true,
-		Amount:         1,
-	}
 }
