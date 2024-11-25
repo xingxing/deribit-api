@@ -153,7 +153,7 @@ func (c *Client) start() error {
 		return errors.New("connect fail")
 	}
 
-	// Create a new object stream with the nhooyr websocket connection
+	// Create a new object stream with the websocket connection
 	stream := websocketmodels.NewObjectStream(c.conn)
 
 	// Initialize the JSON-RPC connection with the stream
