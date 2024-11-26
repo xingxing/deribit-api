@@ -9,7 +9,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-func (c *Client) subscriptionsProcess(event *websockecmodels.Event) {
+func (c *DeribitWSClient) subscriptionsProcess(event *websockecmodels.Event) {
 	if c.debugMode {
 		log.Printf("Channel: %v %v", event.Channel, string(event.Data))
 	}

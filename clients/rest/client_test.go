@@ -229,3 +229,69 @@ func TestGetCurrentFundingRate(t *testing.T) {
 func stringPtr(s string) *string {
 	return &s
 }
+
+func TestGetBookSummaryByInstrument(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/public/get_book_summary_by_instrument", r.URL.Path)
+		assert.Equal(t, "ETH-22FEB19-140-P", r.URL.Query().Get("instrument_name"))
+
+		response := `{
+            "jsonrpc": "2.0",
+            "id": 3659,
+            "result": [{
+                "volume": 0.55,
+                "underlying_price": 121.38,
+                "underlying_index": "index_price",
+                "quote_currency": "USD",
+                "price_change": -26.7793594,
+                "open_interest": 0.55,
+                "mid_price": 0.2444,
+                "mark_price": 0.179112,
+                "low": 0.34,
+                "last": 0.34,
+                "interest_rate": 0.207,
+                "instrument_name": "ETH-22FEB19-140-P",
+                "high": 0.34,
+                "creation_timestamp": 1550227952163,
+                "bid_price": 0.1488,
+                "base_currency": "ETH",
+                "ask_price": 0.34
+            }]
+        }`
+		_, err := w.Write([]byte(response))
+		if err != nil {
+			return
+		}
+	}))
+	defer server.Close()
+
+	client := &DeribitRestClient{
+		Client:  http.DefaultClient,
+		BaseURL: server.URL,
+		Logger:  logrus.New(),
+	}
+
+	summaries, err := client.GetBookSummary("ETH-22FEB19-140-P")
+	assert.NoError(t, err)
+	assert.NotNil(t, summaries)
+	assert.Len(t, summaries, 1)
+
+	summary := summaries[0]
+
+	assert.Equal(t, 0.55, summary.Volume)
+	assert.Equal(t, 121.38, summary.UnderlyingPrice)
+	assert.Equal(t, "index_price", summary.UnderlyingIndex)
+	assert.Equal(t, "USD", summary.QuoteCurrency)
+	assert.Equal(t, 0.55, summary.OpenInterest)
+	assert.Equal(t, 0.2444, summary.MidPrice)
+	assert.Equal(t, 0.179112, summary.MarkPrice)
+	assert.Equal(t, 0.34, summary.Low)
+	assert.Equal(t, 0.34, summary.Last)
+	assert.Equal(t, 0.207, summary.InterestRate)
+	assert.Equal(t, "ETH-22FEB19-140-P", summary.InstrumentName)
+	assert.Equal(t, 0.34, summary.High)
+	assert.Equal(t, int64(1550227952163), summary.CreationTimestamp)
+	assert.Equal(t, 0.1488, summary.BidPrice)
+	assert.Equal(t, "ETH", summary.BaseCurrency)
+	assert.Equal(t, 0.34, summary.AskPrice)
+}

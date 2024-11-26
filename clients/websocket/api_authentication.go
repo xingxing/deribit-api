@@ -4,7 +4,7 @@ import (
 	"github.com/joaquinbejar/deribit-api/pkg/models"
 )
 
-func (c *Client) Auth(apiKey string, secretKey string) (err error) {
+func (c *DeribitWSClient) Auth(apiKey string, secretKey string) (err error) {
 	params := models.ClientCredentialsParams{
 		GrantType:    "client_credentials",
 		ClientID:     apiKey,
@@ -20,7 +20,7 @@ func (c *Client) Auth(apiKey string, secretKey string) (err error) {
 	return
 }
 
-func (c *Client) Logout() (err error) {
+func (c *DeribitWSClient) Logout() (err error) {
 	var result = struct {
 	}{}
 	err = c.Call("public/auth", nil, &result)

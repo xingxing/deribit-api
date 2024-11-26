@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newClient() *Client {
+func newClient() *DeribitWSClient {
 	cfg := &deribit.Configuration{
 		WsAddr:        deribit.TestBaseURL,
 		ApiKey:        "AsJTU16U",

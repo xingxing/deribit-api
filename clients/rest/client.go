@@ -397,3 +397,37 @@ func (d *DeribitRestClient) GetCurrentFundingRate(instrument string) (models.Fun
 
 	return d.GetFundingRate(instrument, startTime, now)
 }
+
+// GetBookSummary retrieves the book summary for a specific instrument
+func (d *DeribitRestClient) GetBookSummary(instrument string) ([]models.BookSummary, error) {
+	params := map[string]interface{}{
+		"instrument_name": instrument,
+	}
+
+	d.Logger.Debugf("Getting book summary for %s", instrument)
+
+	result, err := d.requestInterface("public/get_book_summary_by_instrument", params, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get book summary: %w", err)
+	}
+
+	// The result is an array of book summaries
+	summariesData, ok := result.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected response format: %T", result)
+	}
+
+	// Convert to JSON to properly unmarshal into BookSummary structs
+	jsonData, err := json.Marshal(summariesData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal book summaries: %w", err)
+	}
+
+	var summaries []models.BookSummary
+	if err := json.Unmarshal(jsonData, &summaries); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal book summaries: %w", err)
+	}
+
+	d.Logger.Debugf("Retrieved %d book summaries for %s", len(summaries), instrument)
+	return summaries, nil
+}

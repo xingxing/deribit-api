@@ -23,7 +23,7 @@ var (
 	ErrAuthenticationIsRequired = errors.New("authentication is required")
 )
 
-type Client struct {
+type DeribitWSClient struct {
 	ctx           context.Context
 	addr          string
 	apiKey        string
@@ -48,12 +48,12 @@ type Client struct {
 	emitter *emission.Emitter
 }
 
-func NewDeribitWsClient(cfg *deribit.Configuration) *Client {
+func NewDeribitWsClient(cfg *deribit.Configuration) *DeribitWSClient {
 	ctx := cfg.Ctx
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	client := &Client{
+	client := &DeribitWSClient{
 		ctx:              ctx,
 		addr:             cfg.WsAddr,
 		apiKey:           cfg.ApiKey,
@@ -71,7 +71,7 @@ func NewDeribitWsClient(cfg *deribit.Configuration) *Client {
 }
 
 // setIsConnected sets state for isConnected
-func (c *Client) setIsConnected(state bool) {
+func (c *DeribitWSClient) setIsConnected(state bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -79,19 +79,19 @@ func (c *Client) setIsConnected(state bool) {
 }
 
 // IsConnected returns the WebSocket connection state
-func (c *Client) IsConnected() bool {
+func (c *DeribitWSClient) IsConnected() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	return c.isConnected
 }
 
-func (c *Client) Subscribe(channels []string) {
+func (c *DeribitWSClient) Subscribe(channels []string) {
 	c.subscriptions = append(c.subscriptions, channels...)
 	c.subscribe(channels)
 }
 
-func (c *Client) subscribe(channels []string) {
+func (c *DeribitWSClient) subscribe(channels []string) {
 	var publicChannels []string
 	var privateChannels []string
 
@@ -129,7 +129,7 @@ func (c *Client) subscribe(channels []string) {
 	}
 }
 
-func (c *Client) start() error {
+func (c *DeribitWSClient) start() error {
 	c.setIsConnected(false)
 	c.subscriptionsMap = make(map[string]struct{})
 	c.conn = nil
@@ -189,7 +189,7 @@ func (c *Client) start() error {
 }
 
 // Call issues JSONRPC v2 calls
-func (c *Client) Call(method string, params interface{}, result interface{}) (err error) {
+func (c *DeribitWSClient) Call(method string, params interface{}, result interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%v", r)
@@ -214,7 +214,7 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 }
 
 // Handle implements jsonrpc2.Handler
-func (c *Client) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+func (c *DeribitWSClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	if req.Method == "subscription" {
 		// update events
 		if req.Params != nil && len(*req.Params) > 0 {
@@ -228,7 +228,7 @@ func (c *Client) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 	}
 }
 
-func (c *Client) heartbeat() {
+func (c *DeribitWSClient) heartbeat() {
 	t := time.NewTicker(3 * time.Second)
 	for {
 		select {
@@ -243,7 +243,7 @@ func (c *Client) heartbeat() {
 	}
 }
 
-func (c *Client) reconnect() {
+func (c *DeribitWSClient) reconnect() {
 	notify := c.rpcConn.DisconnectNotify()
 	<-notify
 	c.setIsConnected(false)
@@ -260,7 +260,7 @@ func (c *Client) reconnect() {
 	}
 }
 
-func (c *Client) connect() (*websocket.Conn, *http.Response, error) {
+func (c *DeribitWSClient) connect() (*websocket.Conn, *http.Response, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	conn, resp, err := websocket.Dial(ctx, c.addr, &websocket.DialOptions{})

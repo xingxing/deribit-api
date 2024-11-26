@@ -34,11 +34,20 @@ func main() {
 	//}
 
 	// Get Trades
-	trades, err := client.GetRecentTrades("BTC-PERPETUAL", 10)
+	//trades, err := client.GetRecentTrades("BTC-PERPETUAL", 10)
+	//if err != nil {
+	//	cfg.Logger.Errorf("Failed to get trades: %v", err)
+	//	return
+	//} else {
+	//	cfg.Logger.Infof("Trades: %v", trades)
+	//}
+
+	// Get GetBookSummaryByInstrument
+	summary, err := client.GetBookSummary("BTC-PERPETUAL")
 	if err != nil {
 		cfg.Logger.Errorf("Failed to get trades: %v", err)
 		return
 	} else {
-		cfg.Logger.Infof("Trades: %v", trades)
+		cfg.Logger.Infof("Summary: %v", summary)
 	}
 }
