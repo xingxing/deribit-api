@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/joaquinbejar/deribit-api/pkg/models"
+	"github.com/xingxing/deribit-api/pkg/models"
 )
 
 // Assuming Trade, Direction, decimalFormat are defined elsewhere

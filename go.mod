@@ -1,6 +1,6 @@
-module github.com/joaquinbejar/deribit-api
+module github.com/xingxing/deribit-api
 
-go 1.23.3
+go 1.21
 
 require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
