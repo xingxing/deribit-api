@@ -70,6 +70,15 @@ func NewDeribitWsClient(cfg *deribit.Configuration) *DeribitWSClient {
 	return client
 }
 
+type Behavior interface {
+	Buy(*models.BuyParams) (models.BuyResponse, error)
+	Sell(*models.SellParams) (models.SellResponse, error)
+	GetOrderMarginByIDs(*models.GetOrderMarginByIDsParams) (models.GetOrderMarginByIDsResponse, error)
+	GetOrderBook(*models.GetOrderBookParams) (models.GetOrderBookResponse, error)
+}
+
+var _ Behavior = (*DeribitWSClient)(nil)
+
 // setIsConnected sets state for isConnected
 func (c *DeribitWSClient) setIsConnected(state bool) {
 	c.mu.Lock()
