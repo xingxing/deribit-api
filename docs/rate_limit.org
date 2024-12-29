@@ -1,0 +1,179 @@
+* STRT Rate limiting
+
+** Without rate limiting
+
+#+begin_src go :main no
+package main
+
+import (
+	"os"
+    "log"
+	"sync"
+)
+
+type client struct {}
+
+func newClient() *client {
+    return &client{}
+}
+
+func (c *client) ReadFile()  {
+    log.Print("ReadFile")
+}
+
+func (c *client) ResolveAddress()  {
+    log.Print("ResolveAddress")
+}
+
+func main() {
+   defer log.Print("main done")
+
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ltime | log.LUTC)
+
+	clt := newClient()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            clt.ReadFile()
+        }()
+    }
+
+	    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            clt.ResolveAddress()
+        }()
+    }
+
+	wg.Wait()
+}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+15:09:26 ResolveAddress
+15:09:26 ReadFile
+15:09:26 ReadFile
+15:09:26 ResolveAddress
+15:09:26 ResolveAddress
+15:09:26 ResolveAddress
+15:09:26 ResolveAddress
+15:09:26 ReadFile
+15:09:26 ResolveAddress
+15:09:26 ReadFile
+15:09:26 ReadFile
+15:09:26 ReadFile
+15:09:26 ResolveAddress
+15:09:26 ReadFile
+15:09:26 ResolveAddress
+15:09:26 ReadFile
+15:09:26 ReadFile
+15:09:26 ReadFile
+15:09:26 ResolveAddress
+15:09:26 ResolveAddress
+15:09:26 main done
+#+end_example
+
+** Adopts rate limiting
+
+#+begin_src go :main no :dir (substitute-in-file-name "$GOPATH/src/babel")
+package main
+
+import (
+	"os"
+    "log"
+	"sync"
+	"context"
+	"golang.org/x/time/rate"
+)
+
+type client struct {
+	limiter *rate.Limiter
+}
+
+func newClient() *client {
+    return &client{
+		limiter: rate.NewLimiter(rate.Limit(1), 1), // 1 request per second
+	}
+}
+
+func (c *client) ReadFile() error  {
+	if err := c.limiter.Wait(context.Background()); err != nil {
+        return err
+	}
+
+    log.Print("ReadFile")
+
+	return nil
+}
+
+func (c *client) ResolveAddress() error {
+    if err := c.limiter.Wait(context.Background()); err != nil {
+        return err
+	}
+
+    log.Print("ResolveAddress")
+
+	return nil
+}
+
+func main() {
+   defer log.Print("main done")
+
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ltime | log.LUTC)
+
+	clt := newClient()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            clt.ReadFile()
+        }()
+    }
+
+	    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            clt.ResolveAddress()
+        }()
+    }
+
+	wg.Wait()
+}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+15:27:01 ReadFile
+15:27:02 ReadFile
+15:27:03 ResolveAddress
+15:27:04 ResolveAddress
+15:27:05 ReadFile
+15:27:06 ResolveAddress
+15:27:07 ResolveAddress
+15:27:08 ResolveAddress
+15:27:09 ResolveAddress
+15:27:10 ResolveAddress
+15:27:11 ResolveAddress
+15:27:12 ResolveAddress
+15:27:13 ReadFile
+15:27:14 ReadFile
+15:27:15 ReadFile
+15:27:16 ResolveAddress
+15:27:17 ReadFile
+15:27:18 ReadFile
+15:27:19 ReadFile
+15:27:20 ReadFile
+15:27:20 main done
+#+end_example
