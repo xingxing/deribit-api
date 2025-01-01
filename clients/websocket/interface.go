@@ -13,20 +13,19 @@ type Behavior interface {
 
 type MarketBehavior interface {
 	GetOrderBook(*models.GetOrderBookParams) (models.GetOrderBookResponse, error)
-
-	GetMarkPriceHistory(*models.GetMarkPriceHistoryParams) (models.MarkPriceHistory, error)
+	GetLastTradesByInstrument(*models.GetLastTradesByInstrumentParams) (models.GetLastTradesResponse, error)
 }
 
 type AccountBehavior interface {
-	GetPositions(*models.GetPositionsParams) ([]models.Position, error)
+	GetPosition(*models.GetPositionParams) (models.Position, error)
 }
 
 type TradingBehavior interface {
 	Buy(*models.BuyParams) (models.BuyResponse, error)
 	Sell(*models.SellParams) (models.SellResponse, error)
-
-	GetOrderHistoryByInstrument(*models.GetOrderHistoryByInstrumentParams) ([]models2.Order, error)
-	CancellByLabel(*models.CancelByLabelParams) (int, error)
+	ClosePosition(*models.ClosePositionParams) (models.ClosePositionResponse, error)
+	CancelAllByInstrument(*models.CancelAllByInstrumentParams) (string, error)
+	GetOpenOrdersByInstrument(*models.GetOpenOrdersByInstrumentParams) ([]models2.Order, error)
 }
 
 var _ Behavior = (*DeribitWSClient)(nil)

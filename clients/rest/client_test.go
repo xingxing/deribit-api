@@ -2,23 +2,24 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/xingxing/deribit-api/pkg/deribit"
-	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/xingxing/deribit-api/pkg/deribit"
 )
 
 func TestNewDeribitRestClient(t *testing.T) {
 	logger := logrus.New()
 	cfg := &deribit.Configuration{
-		ApiKey:    "test-key",
-		SecretKey: "test-secret",
-		RestAddr:  "http://test.deribit.com",
-		Logger:    logger,
+		RestAddr: deribit.RealRestBaseURL,
+		//			ApiKey:    os.Getenv("DERIBIT_KEY"),
+		//SecretKey: os.Getenv("DERIBIT_SECRET"),
+		Logger: logger,
 	}
 
 	client := NewDeribitRestClient(cfg)
@@ -28,6 +29,12 @@ func TestNewDeribitRestClient(t *testing.T) {
 	assert.Equal(t, cfg.SecretKey, client.ApiSecret)
 	assert.Equal(t, cfg.RestAddr, client.BaseURL)
 	assert.Equal(t, logger, client.Logger)
+
+	depth := 1
+
+	book, err := client.GetOrderbook("BTC-31JAN25", &depth)
+
+	t.Logf("%v %v", book, err)
 }
 
 func TestGetAuthToken(t *testing.T) {
