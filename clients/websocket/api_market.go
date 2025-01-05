@@ -44,6 +44,11 @@ func (c *DeribitWSClient) GetInstruments(params *models.GetInstrumentsParams) (r
 	return
 }
 
+func (c *DeribitWSClient) GetInstrument(params *models.GetInstrumentParams) (result models.Instrument, err error) {
+	err = c.Call("public/get_instrument", params, &result)
+	return
+}
+
 func (c *DeribitWSClient) GetLastSettlementsByCurrency(params *models.GetLastSettlementsByCurrencyParams) (result models.GetLastSettlementsResponse, err error) {
 	err = c.Call("public/get_last_settlements_by_currency", params, &result)
 	return

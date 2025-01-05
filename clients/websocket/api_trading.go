@@ -40,7 +40,7 @@ func (c *DeribitWSClient) CancelAllByInstrument(params *models.CancelAllByInstru
 	return
 }
 
-func (c *DeribitWSClient) CancellByLabel(params *models.CancelByLabelParams) (result int, err error) {
+func (c *DeribitWSClient) CancelByLabel(params *models.CancelByLabelParams) (result int, err error) {
 	err = c.Call("private/cancel_by_label", params, &result)
 	return
 }

@@ -2,7 +2,6 @@ package websocket
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 
 	websocketmodels "github.com/xingxing/deribit-api/clients/websocket/models"
@@ -14,12 +13,12 @@ import (
 
 func newClient() *DeribitWSClient {
 	cfg := &deribit.Configuration{
-		// WsAddr:    deribit.TestBaseURL,
-		// ApiKey:    "AsJTU16U",
-		// SecretKey: "mM5_K8LVxztN6TjjYpv_cJVGQBvk4jglrEpqkw1b87U",
-		WsAddr:        deribit.RealBaseURL,
-		ApiKey:        os.Getenv("DERIBIT_KEY"),
-		SecretKey:     os.Getenv("DERIBIT_SECRET"),
+		WsAddr:    deribit.TestBaseURL,
+		ApiKey:    "AsJTU16U",
+		SecretKey: "mM5_K8LVxztN6TjjYpv_cJVGQBvk4jglrEpqkw1b87U",
+		// WsAddr:        deribit.RealBaseURL,
+		// ApiKey:        os.Getenv("DERIBIT_KEY"),
+		// SecretKey:     os.Getenv("DERIBIT_SECRET"),
 		AutoReconnect: true,
 		DebugMode:     true,
 	}
@@ -159,6 +158,12 @@ func TestJsonOmitempty(t *testing.T) {
 func TestOnBook(t *testing.T) {
 	client := newClient()
 
+	r, err := client.GetInstrument(&models.GetInstrumentParams{
+		InstrumentName: "BTC-31JAN25",
+	})
+
+	t.Logf("%#v , %s ", r, err)
+
 	// r, _ := client.GetAccountSummary(&models.GetAccountSummaryParams{
 	// 	Currency: "BTC",
 	// 	Extended: false,
@@ -202,7 +207,9 @@ func TestOnBook(t *testing.T) {
 	// })
 
 	// for _, v := range r {
-	// 	t.Logf("%#v", v)
+	// 	if v.InstrumentName == "BTC-31JAN25" {
+	// 		t.Logf("%#v", v.TickSize)
+	// 	}
 	// }
 
 	//t.Logf("%#v %v", r, err)
@@ -224,16 +231,16 @@ func TestOnBook(t *testing.T) {
 	//   "direction": "buy"
 	// }
 
-	r, err := client.Buy(&models.BuyParams{
-		InstrumentName: "BTC-31JAN25",
-		TimeInForce:    "good_til_cancelled",
-		Amount:         10,
-		Price:          94619,
-		Type:           "limit",
-		Direction:      "buy",
-	})
+	// r, err := client.Buy(&models.BuyParams{
+	// 	InstrumentName: "BTC-31JAN25",
+	// 	TimeInForce:    "good_til_cancelled",
+	// 	Amount:         10,
+	// 	Price:          94619,
+	// 	Type:           "limit",
+	// 	Direction:      "buy",
+	// })
 
-	t.Logf("%#v %v", r, err)
+	// t.Logf("%#v %v", r, err)
 
 	// sr, err := client.CancellByLabel(&models.CancelByLabelParams{
 	// 	Label:    "xingxing",

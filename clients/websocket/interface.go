@@ -14,6 +14,8 @@ type Behavior interface {
 type MarketBehavior interface {
 	GetOrderBook(*models.GetOrderBookParams) (models.GetOrderBookResponse, error)
 	GetLastTradesByInstrument(*models.GetLastTradesByInstrumentParams) (models.GetLastTradesResponse, error)
+
+	GetInstrument(*models.GetInstrumentParams) (models.Instrument, error)
 }
 
 type AccountBehavior interface {
@@ -25,6 +27,7 @@ type TradingBehavior interface {
 	Sell(*models.SellParams) (models.SellResponse, error)
 	ClosePosition(*models.ClosePositionParams) (models.ClosePositionResponse, error)
 	CancelAllByInstrument(*models.CancelAllByInstrumentParams) (string, error)
+	CancelByLabel(*models.CancelByLabelParams) (int, error)
 	GetOpenOrdersByInstrument(*models.GetOpenOrdersByInstrumentParams) ([]models2.Order, error)
 }
 
